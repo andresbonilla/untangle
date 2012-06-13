@@ -18,6 +18,8 @@ var sampleLines = [
     { point1: 0, point2: 2 }
 ];
 
+var holds = {}
+
 var express = require('express'),
     app     = express.createServer(),
     io      = require('socket.io').listen(app);
@@ -47,6 +49,7 @@ io.sockets.on('connection', function (socket) {
   socket.emit('init', { points: samplePoints, lines: sampleLines });
   
   socket.on('hold', function (data) {
+	  holds[socket.id] = data.point_id;
     var curr;
     for (var i = 0; i < samplePoints.length; i++) {
       curr = samplePoints[i];
@@ -82,10 +85,24 @@ io.sockets.on('connection', function (socket) {
       }
     }
     // TODO: Check for win condition and broadcast victory if found or write point positions to DB
+	  delete holds[socket.id];
   });
   
-  
-});
+	socket.on('disconnect', function () {
 
+	  var curr,
+				held_point = holds[socket.id];
+	  for (var i = 0; i < samplePoints.length; i++) {
+	    curr = samplePoints[i];
+	    if (curr.id === held_point) {
+	      curr.held = false;
+	      socket.broadcast.emit('released', { point_id: curr.id });
+	      break;
+	    }
+	  }
+	  // TODO: Check for win condition and broadcast victory if found or write point positions to DB
+		delete holds[socket.id];
+	});
+});
 
 app.listen(process.env.PORT || 4000);
