@@ -4,25 +4,25 @@
   	Fixtures
 
   */
-  var samplePoints = [
+  var thePoints = [
       { id: 0, x: 320, y: 230, held: false },
       { id: 1, x: 124, y: 251, held: false },
       { id: 2, x: 145, y: 454, held: false },
       { id: 3, x: 70, y: 330, held: false }
   ];
 
-  var sampleLines = [
-      { point1: samplePoints[0], point2: samplePoints[1] },
-      { point1: samplePoints[1], point2: samplePoints[2] },
-      { point1: samplePoints[2], point2: samplePoints[3] },
-      { point1: samplePoints[3], point2: samplePoints[0] },
-      { point1: samplePoints[0], point2: samplePoints[2] }
+  var theLines = [
+      { point1: thePoints[0], point2: thePoints[1] },
+      { point1: thePoints[1], point2: thePoints[2] },
+      { point1: thePoints[2], point2: thePoints[3] },
+      { point1: thePoints[3], point2: thePoints[0] },
+      { point1: thePoints[0], point2: thePoints[2] }
   ];
   
   var XMIN = 20,
       XMAX = 1000,
       YMIN = 20,
-      YMAX = 1000;
+      YMAX = 700;
 
   var express  = require('express'),
       app      = express.createServer(),
@@ -46,18 +46,18 @@
   });
   
   function shufflePoints () {
-    for (var i = 0; i < samplePoints.length; i++) {
-      samplePoints[i].x = Math.floor((Math.random()*XMAX)) + XMIN;
-      samplePoints[i].y = Math.floor((Math.random()*YMAX)) + YMIN;
+    for (var i = 0; i < thePoints.length; i++) {
+      thePoints[i].x = Math.floor((Math.random()*XMAX)) + XMIN;
+      thePoints[i].y = Math.floor((Math.random()*YMAX)) + YMIN;
     }
   }
   
   function grow () {
-    var randomLine = sampleLines[Math.floor((Math.random()*sampleLines.length))],
-        newPoint = {id: samplePoints.length, x: 0, y:0, held:false};
-    samplePoints.push(newPoint);
-    sampleLines.push({point1: newPoint, point2: randomLine.point1});
-    sampleLines.push({point1: newPoint, point2: randomLine.point2});
+    var randomLine = theLines[Math.floor((Math.random()*theLines.length))],
+        newPoint = {id: thePoints.length, x: 0, y:0, held:false};
+    thePoints.push(newPoint);
+    theLines.push({point1: newPoint, point2: randomLine.point1});
+    theLines.push({point1: newPoint, point2: randomLine.point2});
     shufflePoints();
   }
   
@@ -68,13 +68,13 @@
 
   io.sockets.on('connection', function (socket) {
   
-    socket.emit('init', { points: samplePoints, lines: sampleLines });
+    socket.emit('init', { points: thePoints, lines: theLines });
   
     socket.on('hold', function (data) {
       holds[socket.id] = data.point_id;
       var curr;
-      for (var i = 0; i < samplePoints.length; i++) {
-        curr = samplePoints[i];
+      for (var i = 0; i < thePoints.length; i++) {
+        curr = thePoints[i];
         if (curr.id === data.point_id) {
           curr.held = true;
           socket.broadcast.emit('held', { point_id: curr.id });
@@ -85,8 +85,8 @@
 
     socket.on('move', function (data) {
       var curr;
-      for (var i = 0; i < samplePoints.length; i++) {
-        curr = samplePoints[i];
+      for (var i = 0; i < thePoints.length; i++) {
+        curr = thePoints[i];
         if (curr.id === data.point_id) {
           curr.x = data.x;
           curr.y = data.y;
@@ -98,8 +98,8 @@
 
     socket.on('release', function (data) {
       var curr;
-      for (var i = 0; i < samplePoints.length; i++) {
-        curr = samplePoints[i];
+      for (var i = 0; i < thePoints.length; i++) {
+        curr = thePoints[i];
         if (curr.id === data.point_id) {
           curr.held = false;
           socket.broadcast.emit('released', { point_id: curr.id });
@@ -107,17 +107,17 @@
         }
       }
       delete holds[socket.id];
-      if (!geometry.intersectionsFound(sampleLines)) {
+      if (!geometry.intersectionsFound(theLines)) {
           grow();
-          io.sockets.emit('solved', { newPoints: samplePoints, newLines: sampleLines });
+          io.sockets.emit('solved', { newPoints: thePoints, newLines: theLines });
       }
     });
   
     socket.on('disconnect', function () {
       var curr,
           held_point = holds[socket.id];
-      for (var i = 0; i < samplePoints.length; i++) {
-        curr = samplePoints[i];
+      for (var i = 0; i < thePoints.length; i++) {
+        curr = thePoints[i];
         if (curr.id === held_point) {
           curr.held = false;
           socket.broadcast.emit('released', { point_id: curr.id });
@@ -125,9 +125,9 @@
         }
       }
       delete holds[socket.id];
-      if (!geometry.intersectionsFound(sampleLines)) {
+      if (!geometry.intersectionsFound(theLines)) {
           grow();
-          io.sockets.emit('solved', { newPoints: samplePoints, newLines: sampleLines });
+          io.sockets.emit('solved', { newPoints: thePoints, newLines: theLines });
       }
     });
   });
