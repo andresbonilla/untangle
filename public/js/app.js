@@ -12,9 +12,9 @@ Untangle = Ember.Application.create({
     LINE_STROKE_WIDTH: 1,
     POINT_STROKE_WIDTH: 2,
     XMIN: 20,
-    XMAX: 500,
+    XMAX: 1000,
     YMIN: 20,
-    YMAX: 500,
+    YMAX: 1000,
 
     socket: io.connect(location.protocol + '//' + location.hostname),
     holding: null,

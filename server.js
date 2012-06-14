@@ -20,9 +20,9 @@
   ];
   
   var XMIN = 20,
-      XMAX = 500,
+      XMAX = 1000,
       YMIN = 20,
-      YMAX = 500;
+      YMAX = 1000;
 
   var express  = require('express'),
       app      = express.createServer(),
