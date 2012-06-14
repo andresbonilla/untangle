@@ -4,12 +4,12 @@
 Untangle = Ember.Application.create({
     POINT_RADIUS: 10,
     HELD_POINT_RADIUS: 15,
-    POINT_FILL_COLOR: '#0F0',
-    HELD_POINT_FILL_COLOR: '#F00',
-    POINT_STROKE_COLOR: '#000',
-    HELD_POINT_STROKE_COLOR: '#000',
-    LINE_COLOR: '#000',
-    LINE_STROKE_WIDTH: 4,
+    POINT_FILL_COLOR: '#111',
+    HELD_POINT_FILL_COLOR: '#111',
+    POINT_STROKE_COLOR: '#42CBED',
+    HELD_POINT_STROKE_COLOR: '#F00',
+    LINE_COLOR: '#CCC',
+    LINE_STROKE_WIDTH: 1,
     POINT_STROKE_WIDTH: 2,
     XMIN: 20,
     XMAX: 500,
@@ -149,7 +149,8 @@ Untangle.pointsController = Ember.ArrayProxy.create({
                 d.hold();
                 d3.select(this)
                   .attr('r', Untangle.HELD_POINT_RADIUS)
-                  .style("fill", Untangle.HELD_POINT_FILL_COLOR);
+                  .style("fill", Untangle.HELD_POINT_FILL_COLOR)
+				          .style('stroke', Untangle.HELD_POINT_STROKE_COLOR);
               }
             })
             .on("drag", function (d, i) {
@@ -165,7 +166,8 @@ Untangle.pointsController = Ember.ArrayProxy.create({
                 d.release();
                 d3.select(this)
                   .attr('r', Untangle.POINT_RADIUS)
-                  .style("fill", Untangle.POINT_FILL_COLOR);
+                  .style("fill", Untangle.POINT_FILL_COLOR)
+				          .style('stroke', Untangle.POINT_STROKE_COLOR);
               }
             }));
     },
