@@ -18,7 +18,8 @@ Untangle = Ember.Application.create({
 
     socket: io.connect(location.protocol + '//' + location.hostname),
     holding: null,
-
+    
+    // This is called when Ember finishes loading. It is a sort of initialization.
     ready: function () {
         Untangle.socket.on('init', function (data) {
             Untangle.pointsController.loadPoints(data.points);
@@ -58,6 +59,9 @@ Untangle.Point = Ember.Object.extend({
     y: null,
     held: false,
 
+    /**
+    * This client holds this point
+    */
     hold: function () {
         Untangle.holding = this.id;
         this.wasHeld();
@@ -66,10 +70,18 @@ Untangle.Point = Ember.Object.extend({
         });
     },
 
+    /**
+    * This point was held by a client, which may be this one.
+    */
     wasHeld: function () {
         this.held = true;
     },
 
+    /**
+    * This client moves this point
+    * @param {Number} x the x coordinate to move the point to
+    * @param {Number} y the y coordinate to move the point to
+    */
     move: function (x, y) {
         this.wasMoved(x, y);
         Untangle.socket.emit('move', {
@@ -79,11 +91,19 @@ Untangle.Point = Ember.Object.extend({
         });
     },
 
+    /**
+    * This point was moved by a client, which may be this one.
+    * @param {Number} x the x coordinate to move the point to
+    * @param {Number} y the y coordinate to move the point to
+    */
     wasMoved: function (x, y) {
         this.x = x;
         this.y = y;
     },
 
+    /**
+    * This client releases this point
+    */
     release: function () {
         Untangle.holding = null;
         this.wasReleased();
@@ -92,11 +112,17 @@ Untangle.Point = Ember.Object.extend({
         });
     },
 
+    /**
+    * This point was released by a client, which may be this one.
+    */
     wasReleased: function () {
         this.held = false;
     }
 });
 
+/**
+* A line is simply composed of 2 points
+*/
 Untangle.Line = Ember.Object.extend({
     point1: null,
     point2: null
@@ -108,7 +134,14 @@ Untangle.Line = Ember.Object.extend({
 */
 Untangle.pointsController = Ember.ArrayProxy.create({
     content: [],
-
+    
+    /**
+    * Creates a point object and adds it to the content array of this controller
+    * @param {Object} id the point's id
+    * @param {Object} x the point's x coordinate
+    * @param {Object} y the point's y coordinate
+    * @return {Object} Returns the point that was created.
+    */
     create: function (id, x, y) {
         var point = Untangle.Point.create({
             id: id,
@@ -118,7 +151,11 @@ Untangle.pointsController = Ember.ArrayProxy.create({
         this.pushObject(point);
         return point;
     },
-
+    
+    /**
+    * Loads an array of points into Ember by creating point objects and adding them to the content array of this controller
+    * @param {Object} points an array of points, each of which has an id, an x coordinate, and a y coordinate.
+    */
     loadPoints: function (points) {
         this.set('content', []);
         var point;
@@ -128,6 +165,9 @@ Untangle.pointsController = Ember.ArrayProxy.create({
         }
     },
 
+    /**
+    * Erases any points that are already drawn and then draws all the points contained in the content array with d3 calls
+    */
     drawAll: function () {
         d3.selectAll('circle').remove();
       
@@ -150,7 +190,7 @@ Untangle.pointsController = Ember.ArrayProxy.create({
                 d3.select(this)
                   .attr('r', Untangle.HELD_POINT_RADIUS)
                   .style("fill", Untangle.HELD_POINT_FILL_COLOR)
-				          .style('stroke', Untangle.HELD_POINT_STROKE_COLOR);
+                  .style('stroke', Untangle.HELD_POINT_STROKE_COLOR);
               }
             })
             .on("drag", function (d, i) {
@@ -167,11 +207,16 @@ Untangle.pointsController = Ember.ArrayProxy.create({
                 d3.select(this)
                   .attr('r', Untangle.POINT_RADIUS)
                   .style("fill", Untangle.POINT_FILL_COLOR)
-				          .style('stroke', Untangle.POINT_STROKE_COLOR);
+                  .style('stroke', Untangle.POINT_STROKE_COLOR);
               }
             }));
     },
 
+    /**
+    * Finds a point with the id point_id in the contents array if it exists and returns it.
+    * @param {Number} point_id the id of the desired point
+    * @return {Object} Returns the point with the id point_id or null if it does not exist there.
+    */
     find: function (point_id) {
         var points = this.get('content');
         for (var i = 0; i < points.length; i++) {
@@ -179,8 +224,13 @@ Untangle.pointsController = Ember.ArrayProxy.create({
                 return points[i];
             }
         }
+        return null;
     },
-
+    
+    /**
+    * Makes the necessary updates when a point is held
+    * @param {Number} point_id the id of the point
+    */
     pointHeld: function (point_id) {
         var point = Untangle.pointsController.find(point_id);
         point.wasHeld();
@@ -190,6 +240,10 @@ Untangle.pointsController = Ember.ArrayProxy.create({
           .style('stroke', Untangle.HELD_POINT_STROKE_COLOR);
     },
 
+    /**
+    * Makes the necessary updates when a point is moved
+    * @param {Number} point_id the id of the point
+    */
     pointMoved: function (point_id, x, y) {
         var point = Untangle.pointsController.find(point_id);
         point.wasMoved(x, y);
@@ -201,6 +255,10 @@ Untangle.pointsController = Ember.ArrayProxy.create({
         Untangle.linesController.update();
     },
 
+    /**
+    * Makes the necessary updates when a point is released
+    * @param {Number} point_id the id of the point
+    */
     pointReleased: function (point_id) {
         var point = Untangle.pointsController.find(point_id);
         point.wasReleased();
@@ -213,7 +271,13 @@ Untangle.pointsController = Ember.ArrayProxy.create({
 
 Untangle.linesController = Ember.ArrayProxy.create({
     content: [],
-
+    
+    /**
+    * Creates a line object and adds it to the content array of this controller
+    * @param {Object} point1 the first point of this line segment
+    * @param {Object} point2 the second point of this line segment
+    * @return {Object} Returns the line that was created.
+    */
     create: function (point1, point2) {
         var line = Untangle.Line.create({
             point1: point1,
@@ -223,6 +287,10 @@ Untangle.linesController = Ember.ArrayProxy.create({
         return line;
     },
 
+    /**
+    * Loads an array of lines into Ember by creating line objects and adding them to the content array of this controller
+    * @param {Object} lines an array of lines, each of which is composed of 2 points
+    */
     loadLines: function (lines) {
         this.set('content', []);
         var line, point1, point2;
@@ -234,6 +302,9 @@ Untangle.linesController = Ember.ArrayProxy.create({
         }
     },
 
+    /**
+    * Erases any lines that are already drawn and then draws all the lines contained in the content array with d3 calls
+    */
     drawAll: function () {
         d3.selectAll('line').remove();
         d3.select('svg')
@@ -249,6 +320,9 @@ Untangle.linesController = Ember.ArrayProxy.create({
           .attr('y2', function (d) { return d.point2.y; });
     },
 
+    /**
+    * Moves the endpoints of the lines when a point has moved
+    */
     update: function () {
         d3.selectAll('line')
           .data(Untangle.linesController.get('content'))
